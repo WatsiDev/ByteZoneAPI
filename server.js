@@ -215,21 +215,57 @@ app.get('/api/productos/:subcategoria_id', (req, res) => {
 });
 
 
-// Crear un nuevo producto
-app.post('/api/productos', (req, res) => {
-    const { nombre, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen } = req.body;
+// Endpoint para agregar un producto
+app.post('/api/addproductos', (req, res) => {
+    const {
+      subcategoria_id,
+      categoria_id,
+      modelo_id,
+      precio,
+      cantidad_en_stock,
+      descripcion,
+      imagen,
+    } = req.body;
+  
+    // Validar que los campos necesarios estén presentes
+    if (
+      !subcategoria_id ||
+      !categoria_id ||
+      !modelo_id ||
+      !precio ||
+      !cantidad_en_stock ||
+      !descripcion ||
+      !imagen
+    ) {
+      return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+    }
+  
+    // Construir la consulta SQL
+    const query = `
+      INSERT INTO producto 
+      (subcategoria_id, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+  
+    // Ejecutar la consulta
     db.query(
-        'INSERT INTO Producto (nombre, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen) VALUES (?, ?, ?, ?, ?, ?, ?)', 
-        [nombre, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen],
-        (err, results) => {
-            if (err) return res.status(500).json({ error: err });
-            res.status(201).json({ id: results.insertId, nombre, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen });
+      query,
+      [subcategoria_id, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen],
+      (err, results) => {
+        if (err) {
+          console.error('Error al insertar producto:', err);
+          return res.status(500).json({ error: 'Error al agregar el producto.' });
         }
+        res.status(201).json({
+          message: 'Producto agregado correctamente.',
+          producto_id: results.insertId,
+        });
+      }
     );
-});
+  });
 
 // Actualizar un producto
-app.put('/api/productos/:id', (req, res) => {
+app.put('/api/editproductos/:id', (req, res) => {
     const { id } = req.params;
     const { nombre, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen } = req.body;
     db.query(
@@ -243,7 +279,7 @@ app.put('/api/productos/:id', (req, res) => {
 });
 
 // Eliminar un producto
-app.delete('/api/productos/:id', (req, res) => {
+app.delete('/api/deleteproductos/:id', (req, res) => {
     const { id } = req.params;
     db.query('DELETE FROM Producto WHERE producto_id = ?', [id], (err, results) => {
         if (err) return res.status(500).json({ error: err });
@@ -306,6 +342,14 @@ app.get('/api/subcategorias/:id', (req, res) => {
     db.query('SELECT subc.subcategoria_id, subc.SubcategoriaName FROM subcategoria subc WHERE subc.categoria_id = ?; ', [id], (err, results) => {
         if (err) return res.status(500).json({ error: err });
         res.json(results);
+    });
+});
+
+//Obtener todas las subcategorias
+app.get('/api/subcategorias', (req, res) => {
+    db.query('SELECT * FROM subcategoria', (err, results) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json(results)
     });
 });
 
