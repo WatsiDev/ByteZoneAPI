@@ -1,359 +1,180 @@
+// server.js
 const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const db = require('./config');
+const cors = require('cors')
+const connection = require('./config');
+const stripe = require("stripe")("sk_test_51QSAxgD6DQOs7GbUbflzicnoDfndFakaiNVns2JTQ8WlC9XlWGS7fcJEW5jOstLnhfHe6dsxEF6RkRfZstOvdo3d00kgyLi00G");
+
 
 const app = express();
-const PORT = 3000;
+const port = 3000;
 
-app.use(cors());
-app.use(bodyParser.json());
+// Middleware para manejar JSON en las solicitudes
+app.use(cors())
+app.use(express.json());
 
+// Rutas CRUD para la tabla 'categorias'
 
-// ----------------------------------------
-// CRUD para Marca
-// ----------------------------------------
-
-// Obtener todas las marcas
-app.get('/api/marcas', (req, res) => {
-    db.query('SELECT * FROM Marca', (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results);
+// Crear una nueva categoría
+app.post('/categorias/add', (req, res) => {
+    const { Categoria } = req.body;
+    const query = 'INSERT INTO categorias (Categoria) VALUES (?)';
+    connection.query(query, [Categoria], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(201).json({ id: result.insertId, Categoria });
     });
 });
-
-// Obtener una marca por ID
-app.get('/api/marcas/:id', (req, res) => {
-    const { id } = req.params;
-    db.query('SELECT * FROM Marca WHERE marca_id = ?', [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results[0]);
-    });
-});
-
-// Crear una nueva marca
-app.post('/api/marcas', (req, res) => {
-    const { nombre } = req.body;
-    db.query('INSERT INTO Marca (nombre) VALUES (?)', [nombre], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.status(201).json({ id: results.insertId, nombre });
-    });
-});
-
-// Actualizar una marca
-app.put('/api/marcas/:id', (req, res) => {
-    const { id } = req.params;
-    const { nombre } = req.body;
-    db.query('UPDATE Marca SET nombre = ? WHERE marca_id = ?', [nombre, id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json({ id, nombre });
-    });
-});
-
-// Eliminar una marca
-app.delete('/api/marcas/:id', (req, res) => {
-    const { id } = req.params;
-    db.query('DELETE FROM Marca WHERE marca_id = ?', [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json({ message: 'Marca eliminada' });
-    });
-});
-
-// ----------------------------------------
-// CRUD para Modelo
-// ----------------------------------------
-
-// Obtener todos los modelos
-app.get('/api/modelos', (req, res) => {
-    db.query('SELECT * FROM Modelo', (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results);
-    });
-});
-
-// Obtener un modelo por ID
-app.get('/api/modelos/:id', (req, res) => {
-    const { id } = req.params;
-    db.query('SELECT * FROM Modelo WHERE modelo_id = ?', [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results[0]);
-    });
-});
-
-// Crear un nuevo modelo
-app.post('/api/modelos', (req, res) => {
-    const { nombre, marca_id } = req.body;
-    db.query('INSERT INTO Modelo (nombre, marca_id) VALUES (?, ?)', [nombre, marca_id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.status(201).json({ id: results.insertId, nombre, marca_id });
-    });
-});
-
-// Actualizar un modelo
-app.put('/api/modelos/:id', (req, res) => {
-    const { id } = req.params;
-    const { nombre, marca_id } = req.body;
-    db.query('UPDATE Modelo SET nombre = ?, marca_id = ? WHERE modelo_id = ?', [nombre, marca_id, id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json({ id, nombre, marca_id });
-    });
-});
-
-// Eliminar un modelo
-app.delete('/api/modelos/:id', (req, res) => {
-    const { id } = req.params;
-    db.query('DELETE FROM Modelo WHERE modelo_id = ?', [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json({ message: 'Modelo eliminado' });
-    });
-});
-
-// ----------------------------------------
-// CRUD para Categoría
-// ----------------------------------------
 
 // Obtener todas las categorías
-app.get('/api/categorias', (req, res) => {
-    db.query('SELECT * FROM Categoria', (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results);
+app.get('/categorias', (req, res) => {
+    const query = 'SELECT * FROM categorias';
+    connection.query(query, (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(200).json(results);
     });
 });
 
 // Obtener una categoría por ID
-app.get('/api/categorias/:id', (req, res) => {
+app.get('/categorias/:id', (req, res) => {
     const { id } = req.params;
-    db.query('SELECT * FROM Categoria WHERE categoria_id = ?', [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results[0]);
-    });
-});
-
-// Crear una nueva categoría
-app.post('/api/categorias', (req, res) => {
-    const { nombre } = req.body;
-    db.query('INSERT INTO Categoria (nombre) VALUES (?)', [nombre], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.status(201).json({ id: results.insertId, nombre });
+    const query = 'SELECT * FROM categorias WHERE Categoria_id = ?';
+    connection.query(query, [id], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'Categoría no encontrada' });
+        }
+        res.status(200).json(results[0]);
     });
 });
 
 // Actualizar una categoría
-app.put('/api/categorias/:id', (req, res) => {
+app.put('/categorias/update/:id', (req, res) => {
     const { id } = req.params;
-    const { nombre } = req.body;
-    db.query('UPDATE Categoria SET nombre = ? WHERE categoria_id = ?', [nombre, id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json({ id, nombre });
+    const { Categoria } = req.body;
+    const query = 'UPDATE categorias SET Categoria = ? WHERE Categoria_id = ?';
+    connection.query(query, [Categoria, id], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Categoría no encontrada' });
+        }
+        res.status(200).json({ message: 'Categoría actualizada' });
     });
 });
 
 // Eliminar una categoría
-app.delete('/api/categorias/:id', (req, res) => {
+app.delete('/categorias/delete/:id', (req, res) => {
     const { id } = req.params;
-    db.query('DELETE FROM Categoria WHERE categoria_id = ?', [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json({ message: 'Categoría eliminada' });
+    const query = 'DELETE FROM categorias WHERE Categoria_id = ?';
+    connection.query(query, [id], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Categoría no encontrada' });
+        }
+        res.status(200).json({ message: 'Categoría eliminada' });
     });
 });
 
-// ----------------------------------------
-// CRUD para Producto
-// ----------------------------------------
+// Rutas CRUD para la tabla 'productos'
+
+// Crear un nuevo producto
+app.post('/productos/add', (req, res) => {
+    const { Categoria_id, Descripcion, Marca, Precio, Stock, Imagen } = req.body;
+    const query = 'INSERT INTO productos (Categoria_id, Descripcion, Marca, Precio, Stock, Imagen) VALUES (?, ?, ?, ?, ?, ?)';
+    connection.query(query, [Categoria_id, Descripcion, Marca, Precio, Stock, Imagen], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(201).json({ id: result.insertId, Categoria_id, Descripcion, Marca, Precio, Stock, Imagen });
+    });
+});
 
 // Obtener todos los productos
-app.get('/api/productos', (req, res) => {
-    db.query('SELECT * FROM Producto', (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results);
+app.get('/productos', (req, res) => {
+    const query = 'SELECT pro.Producto_id, pro.Descripcion, pro.Marca, pro.Precio, pro.Stock, pro.Imagen, cat.Categoria ' +
+                 ' FROM productos as pro JOIN categorias as cat ON pro.Categoria_id = cat.Categoria_id; ';
+    connection.query(query, (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(200).json(results);
     });
-});
-
-//Listar productos
-app.get('/api/listProducts', (req, res) => {
-    db.query('SELECT mar.MarcaName, subc.SubcategoriaName, pro.precio, cat.CategoriaName, model.ModeloName, pro.cantidad_en_stock, pro.descripcion, pro.imagen '+
-' FROM producto pro ' +
-' JOIN subcategoria subc ON pro.subcategoria_id = subc.subcategoria_id '+
-' JOIN categoria cat ON pro.categoria_id = cat.categoria_id '+
-' JOIN modelo model ON pro.modelo_id = model.modelo_id '+
-' JOIN marca mar ON model.marca_id = mar.marca_id;', (err, results) => { 
-                if (err) return res.status(500).json({ error: err });
-                res.json(results)
-             });
 });
 
 // Obtener un producto por ID
-app.get('/api/productos/all/:id', (req, res) => {
+app.get('/productos/:id', (req, res) => {
     const { id } = req.params;
-    db.query('SELECT * FROM Producto WHERE producto_id = ?', [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results[0]);
+    const query = 'SELECT * FROM productos WHERE Producto_id = ?';
+    connection.query(query, [id], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'Producto no encontrado' });
+        }
+        res.status(200).json(results[0]);
     });
 });
-
-// Obtener productos por subcategoria_id
-app.get('/api/productos/:subcategoria_id', (req, res) => {
-    const { subcategoria_id } = req.params;
-
-    // Consulta SQL para obtener los productos de la subcategoría
-    const query = `
-      SELECT producto_id, subcategoria_id, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen 
-      FROM producto 
-      WHERE subcategoria_id = ?;
-    `;
-
-    // Ejecutar la consulta a la base de datos
-    db.query(query, [subcategoria_id], (err, results) => {
-        if (err) {
-            console.error('Error al obtener los productos:', err);
-            return res.status(500).json({ error: 'Error en el servidor' });
-        }
-
-        // Enviar los productos como respuesta
-        res.json(results);
-    });
-});
-
-
-// Endpoint para agregar un producto
-app.post('/api/addproductos', (req, res) => {
-    const {
-      subcategoria_id,
-      categoria_id,
-      modelo_id,
-      precio,
-      cantidad_en_stock,
-      descripcion,
-      imagen,
-    } = req.body;
-  
-    // Validar que los campos necesarios estén presentes
-    if (
-      !subcategoria_id ||
-      !categoria_id ||
-      !modelo_id ||
-      !precio ||
-      !cantidad_en_stock ||
-      !descripcion ||
-      !imagen
-    ) {
-      return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
-    }
-  
-    // Construir la consulta SQL
-    const query = `
-      INSERT INTO producto 
-      (subcategoria_id, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
-  
-    // Ejecutar la consulta
-    db.query(
-      query,
-      [subcategoria_id, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen],
-      (err, results) => {
-        if (err) {
-          console.error('Error al insertar producto:', err);
-          return res.status(500).json({ error: 'Error al agregar el producto.' });
-        }
-        res.status(201).json({
-          message: 'Producto agregado correctamente.',
-          producto_id: results.insertId,
-        });
-      }
-    );
-  });
 
 // Actualizar un producto
-app.put('/api/editproductos/:id', (req, res) => {
+app.put('/productos/update/:id', (req, res) => {
     const { id } = req.params;
-    const { nombre, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen } = req.body;
-    db.query(
-        'UPDATE Producto SET nombre = ?, categoria_id = ?, modelo_id = ?, precio = ?, cantidad_en_stock = ?, descripcion = ?, imagen = ? WHERE producto_id = ?', 
-        [nombre, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen, id],
-        (err, results) => {
-            if (err) return res.status(500).json({ error: err });
-            res.json({ id, nombre, categoria_id, modelo_id, precio, cantidad_en_stock, descripcion, imagen });
+    const { Categoria_id, Descripcion, Marca, Precio, Stock, Imagen } = req.body;
+    const query = 'UPDATE productos SET Categoria_id = ?, Descripcion = ?, Marca = ?, Precio = ?, Stock = ?, Imagen = ? WHERE Producto_id = ?';
+    connection.query(query, [Categoria_id, Descripcion, Marca, Precio, Stock, Imagen, id], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
         }
-    );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Producto no encontrado' });
+        }
+        res.status(200).json({ message: 'Producto actualizado' });
+    });
 });
 
 // Eliminar un producto
-app.delete('/api/deleteproductos/:id', (req, res) => {
+app.delete('/productos/delete/:id', (req, res) => {
     const { id } = req.params;
-    db.query('DELETE FROM Producto WHERE producto_id = ?', [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json({ message: 'Producto eliminado' });
+    const query = 'DELETE FROM productos WHERE Producto_id = ?';
+    connection.query(query, [id], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Producto no encontrado' });
+        }
+        res.status(200).json({ message: 'Producto eliminado' });
     });
 });
 
-// ----------------------------------------
-// CRUD para Especificaciones
-// ----------------------------------------
+// Crear un Payment Intent para Stripe
+app.post("/create-payment-intent", async (req, res) => {
+    const { amount } = req.body; // Monto en centavos (e.g., 1000 = $10.00)
 
-// Obtener todas las especificaciones
-app.get('/api/especificaciones', (req, res) => {
-    db.query('SELECT * FROM Especificaciones', (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results);
-    });
-});
+    try {
+        // Crea un PaymentIntent con Stripe
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount, // Monto en centavos
+            currency: "usd", // Moneda (puedes usar otra soportada)
+        });
 
-// Obtener una especificación por ID
-app.get('/api/especificaciones/:id', (req, res) => {
-    const { id } = req.params;
-    db.query('SELECT * FROM Especificaciones WHERE especificacion_id = ?', [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results[0]);
-    });
-});
-
-// Crear una nueva especificación
-app.post('/api/especificaciones', (req, res) => {
-    const { nombre, valor, producto_id } = req.body;
-    db.query('INSERT INTO Especificaciones (nombre, valor, producto_id) VALUES (?, ?, ?)', [nombre, valor, producto_id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.status(201).json({ id: results.insertId, nombre, valor, producto_id });
-    });
-});
-
-// Actualizar una especificación
-app.put('/api/especificaciones/:id', (req, res) => {
-    const { id } = req.params;
-    const { nombre, valor, producto_id } = req.body;
-    db.query('UPDATE Especificaciones SET nombre = ?, valor = ?, producto_id = ? WHERE especificacion_id = ?', [nombre, valor, producto_id, id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json({ id, nombre, valor, producto_id });
-    });
-});
-
-// Eliminar una especificación
-app.delete('/api/especificaciones/:id', (req, res) => {
-    const { id } = req.params;
-    db.query('DELETE FROM Especificaciones WHERE especificacion_id = ?', [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json({ message: 'Especificación eliminada' });
-    });
-});
-
-//Obtener subcategoria por id
-app.get('/api/subcategorias/:id', (req, res) => {
-    const { id } = req.params;
-    db.query('SELECT subc.subcategoria_id, subc.SubcategoriaName FROM subcategoria subc WHERE subc.categoria_id = ?; ', [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results);
-    });
-});
-
-//Obtener todas las subcategorias
-app.get('/api/subcategorias', (req, res) => {
-    db.query('SELECT * FROM subcategoria', (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results)
-    });
+        res.send({
+            clientSecret: paymentIntent.client_secret, // Enviar el client_secret al cliente
+        });
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
 });
 
 // Iniciar el servidor
-app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+app.listen(port, () => {
+    console.log(`Servidor corriendo en http://localhost:${port}`);
 });
