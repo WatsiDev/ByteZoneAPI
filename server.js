@@ -12,6 +12,80 @@ const port = 3000;
 app.use(cors())
 app.use(express.json());
 
+// Rutas CRUD para usuarios
+
+// Crear un nuevo usuario
+app.post('/usuarios/add', (req, res) => {
+    const { username, email, password, rol } = req.body;
+    const query = 'INSERT INTO usuarios (username, email, password, rol) VALUES (?, ?, ?, ?)';
+    connection.query(query, [username, email, password, rol], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(201).json({ id: result.insertId, username, email, rol });
+    });
+});
+
+// Obtener todos los usuarios
+app.get('/usuarios', (req, res) => {
+    const query = 'SELECT * FROM usuarios';
+    connection.query(query, (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(200).json(results);
+    });
+});
+
+// Obtener un usuario por ID
+app.get('/usuarios/:id', (req, res) => {
+    const { id } = req.params;
+    const query = 'SELECT * FROM usuarios WHERE id = ?';
+    connection.query(query, [id], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+        res.status(200).json(results[0]);
+    });
+});
+
+// Actualizar un usuario
+app.put('/usuarios/update/:id', (req, res) => {
+    const { id } = req.params;
+    const { username, email, password, rol } = req.body;
+    const query = 'UPDATE usuarios SET username = ?, email = ?, password = ?, rol = ? WHERE id = ?';
+    connection.query(query, [username, email, password, rol, id], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+        res.status(200).json({ message: 'Usuario actualizado' });
+    });
+});
+
+// Eliminar un usuario
+app.delete('/usuarios/delete/:id', (req, res) => {
+    const { id } = req.params;
+    const query = 'DELETE FROM usuarios WHERE id = ?';
+    connection.query(query, [id], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+        res.status(200).json({ message: 'Usuario eliminado' });
+    });
+});
+
+
+
+
 // Rutas CRUD para la tabla 'categorias'
 
 // Crear una nueva categoría
